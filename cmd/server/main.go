@@ -1,33 +1,45 @@
 package main
 
 import (
-	// "log"
-	"fmt"
 	"log"
-	// "net/http"
+	"net/http"
+	"time"
 )
 
 func main() {
-	// http.HandleFunc("/", buscaCEP)
+	http.HandleFunc("/{cep}", buscaCEP)
 
-	cep := "04165-030"
-
-	e1, err := buscaAPICEP(cep)
-	if err != nil {
-		log.Fatalf("Error on APICEP: %v\n", err)
-	}
-	fmt.Printf("APICEP: %s \n", e1)
-
-	e2, err := buscaViaCEP(cep)
-	if err != nil {
-		log.Fatalf("Error on ViaCEP: %v\n", err)
-	}
-	fmt.Printf("viaCEP: %s \n", e2)
-
-	// log.Println("listening at http://localhost:3000")
-	// http.ListenAndServe(":3000", nil)
+	log.Println("listening at http://localhost:8000")
+	http.ListenAndServe(":8000", nil)
 }
 
-// func buscaCEP(w http.ResponseWriter, r *http.Request) {
+func buscaCEP(w http.ResponseWriter, r *http.Request) {
+	cep := r.URL.Query().Get("cep")
+	log.Printf("CEP: %s\n", cep)
+	if cep == "" || len(cep) != 9 {	
+		http.Error(w, "cep not provided", http.StatusUnprocessableEntity)
+	}
 
-// }
+	api := make(chan string)
+	via := make(chan string)
+
+	// api CEP
+	go buscaAPICEP(cep, api)
+
+	// via CEO
+	go buscaViaCEP(cep, via)
+
+	// recebe o 1º resultado que chega
+	for {
+		select {
+		case endereco1 := <- api:
+			log.Printf("API API: %s\n", endereco1)
+			
+		case endereco2 := <- via:
+			log.Printf("Via API: %s\n", endereco2)
+
+		case <-time.After(time.Second * 1):
+			log.Printf("timeout after 1 second")
+		}		
+	}
+}

@@ -19,31 +19,31 @@ type apiCEP struct {
 	StatusText string
 }
 
-func buscaAPICEP(cep string) (string, error) {
+func buscaAPICEP(cep string, ch chan string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://cdn.apicep.com/file/apicep/"+cep+".json", nil)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 	// defer req.Body.Close()
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 
 	var c apiCEP
 	err = json.Unmarshal(body, &c)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 	endereco := c.Address + ", " + c.District + ", " + c.City + " - " + c.State + ", " + c.Code
-	return endereco, nil
+	ch <- endereco
 }

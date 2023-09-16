@@ -21,31 +21,31 @@ type viaCEP struct {
 	SIAFI       string
 }
 
-func buscaViaCEP(cep string) (string, error) {
+func buscaViaCEP(cep string, ch chan string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://viacep.com.br/ws/"+cep+"/json/", nil)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 	// defer req.Body.Close()
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 
 	var c viaCEP
 	err = json.Unmarshal(body, &c)
 	if err != nil {
-		return "", err
+		ch <- err.Error()
 	}
 	endereco := c.Logradouro + ", " + c.Bairro + ", " + c.Localidade + " - " + c.UF + ", " + c.CEP
-	return endereco, nil
+	ch <- endereco
 }
