@@ -17,6 +17,7 @@ func buscaCEP(w http.ResponseWriter, r *http.Request) {
 	cep := r.URL.Query().Get("cep")
 	log.Printf("CEP: %s\n", cep)
 	if cep == "" || len(cep) != 9 {	
+		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, "cep not provided", http.StatusUnprocessableEntity)
 	}
 
@@ -30,16 +31,23 @@ func buscaCEP(w http.ResponseWriter, r *http.Request) {
 	go buscaViaCEP(cep, via)
 
 	// recebe o 1º resultado que chega
+	w.Header().Set("Content-Type", "application/json")
 	for {
 		select {
 		case endereco1 := <- api:
-			log.Printf("API API: %s\n", endereco1)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("API API:" + endereco1))
+			// log.Printf("API API: %s\n", endereco1)
 			
 		case endereco2 := <- via:
-			log.Printf("Via API: %s\n", endereco2)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Via API: " + endereco2))
+			// log.Printf("Via API: %s\n", endereco2)
 
 		case <-time.After(time.Second * 1):
-			log.Printf("timeout after 1 second")
+			w.WriteHeader(http.StatusRequestTimeout)
+			w.Write([]byte("timeout after 1 second"))
+			// log.Printf("timeout after 1 second")
 		}		
 	}
 }
