@@ -1,22 +1,28 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	http.HandleFunc("/{cep}", buscaCEP)
+	mux := chi.NewMux()
+	mux.Route("/busca", func(r chi.Router) {
+		r.Get("/{cep}", buscaCEP)
+	})
 
 	log.Println("listening at http://localhost:8000")
-	http.ListenAndServe(":8000", nil)
+	log.Fatal(http.ListenAndServe(":8000", mux))
 }
 
 func buscaCEP(w http.ResponseWriter, r *http.Request) {
-	cep := r.URL.Query().Get("cep")
-	log.Printf("CEP: %s\n", cep)
-	if cep == "" || len(cep) != 9 {	
+	startAt := time.Now()
+	cep := chi.URLParam(r, "cep")
+	if cep == "" || len(cep) != 9 {
 		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, "cep not provided", http.StatusUnprocessableEntity)
 	}
@@ -30,24 +36,25 @@ func buscaCEP(w http.ResponseWriter, r *http.Request) {
 	// via CEO
 	go buscaViaCEP(cep, via)
 
-	// recebe o 1º resultado que chega
+	// formata o header
 	w.Header().Set("Content-Type", "application/json")
-	for {
-		select {
-		case endereco1 := <- api:
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("API API:" + endereco1))
-			// log.Printf("API API: %s\n", endereco1)
-			
-		case endereco2 := <- via:
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Via API: " + endereco2))
-			// log.Printf("Via API: %s\n", endereco2)
+	encoder := json.NewEncoder(w)
+	
+	// recebe o 1º resultado que chega
+	select {
+	case endereco1 := <- api:
+		log.Printf("Duration: %s", time.Since(startAt).String())
+		response := "API API:" + endereco1
+		encoder.Encode(&response)
 
-		case <-time.After(time.Second * 1):
-			w.WriteHeader(http.StatusRequestTimeout)
-			w.Write([]byte("timeout after 1 second"))
-			// log.Printf("timeout after 1 second")
-		}		
+	case endereco2 := <- via:
+		log.Printf("Duration: %s", time.Since(startAt).String())
+		response := "Via API:" + endereco2
+		encoder.Encode(&response)
+
+	case <-time.After(time.Second * 1):
+		log.Printf("Duration: %s", time.Since(startAt).String())
+		w.WriteHeader(http.StatusRequestTimeout)
+		encoder.Encode("timeout after 1 second")
 	}
 }

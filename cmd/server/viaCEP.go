@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -22,10 +23,11 @@ type viaCEP struct {
 }
 
 func buscaViaCEP(cep string, ch chan string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*350)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://viacep.com.br/ws/"+cep+"/json/", nil)
+	url := "http://viacep.com.br/ws/" + cep + "/json/"
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		ch <- err.Error()
 	}
@@ -47,5 +49,6 @@ func buscaViaCEP(cep string, ch chan string) {
 		ch <- err.Error()
 	}
 	endereco := c.Logradouro + ", " + c.Bairro + ", " + c.Localidade + " - " + c.UF + ", " + c.CEP
+	log.Printf("Via: %s\n", endereco)
 	ch <- endereco
 }
