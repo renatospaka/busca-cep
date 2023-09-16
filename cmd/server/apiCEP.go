@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -20,10 +21,11 @@ type apiCEP struct {
 }
 
 func buscaAPICEP(cep string, ch chan string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*350)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://cdn.apicep.com/file/apicep/"+cep+".json", nil)
+	url := "https://cdn.apicep.com/file/apicep/" + cep + ".json"
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		ch <- err.Error()
 	}
@@ -45,5 +47,6 @@ func buscaAPICEP(cep string, ch chan string) {
 		ch <- err.Error()
 	}
 	endereco := c.Address + ", " + c.District + ", " + c.City + " - " + c.State + ", " + c.Code
+	log.Printf("API: %s\n", endereco)
 	ch <- endereco
 }
