@@ -11,17 +11,17 @@ services:
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
 
-  db:
-    build: .docker/postgres
-    container_name: db_busca-cep
-    tty: true
-    ports:
-      - 3801:5432
-    volumes:
-      - $HOME/postgres/pgdata-15:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=busca-cep
-      - POSTGRES_USER=busca-cep
-      - POSTGRES_PASSWORD=thisislocal#noneedtoworry
-    extra_hosts:
-      - "host.docker.internal:172.17.0.1"
+  # db:
+  #   build: .docker/postgres
+  #   container_name: db_busca-cep
+  #   tty: true
+  #   ports:
+  #     - 3801:5432
+  #   volumes:
+  #     - $HOME/postgres/pgdata-15:/var/lib/postgresql/data
+  #   environment:
+  #     - POSTGRES_DB=busca-cep
+  #     - POSTGRES_USER=busca-cep
+  #     - POSTGRES_PASSWORD=thisislocal#noneedtoworry
+  #   extra_hosts:
+  #     - "host.docker.internal:172.17.0.1"
