@@ -33,7 +33,7 @@ func buscaCEP(w http.ResponseWriter, r *http.Request) {
 	// api CEP
 	go buscaAPICEP(cep, api)
 
-	// via CEO
+	// // via CEP
 	go buscaViaCEP(cep, via)
 
 	// formata o header
