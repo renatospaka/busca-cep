@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -22,10 +23,25 @@ func main() {
 func buscaCEP(w http.ResponseWriter, r *http.Request) {
 	startAt := time.Now()
 	cep := chi.URLParam(r, "cep")
-	if cep == "" || len(cep) != 9 {
+	// if cep == "" || (len(cep) < 8 || len(cep) > 9) {
+	// 	w.Header().Set("Content-Type", "application/json")
+	// 	http.Error(w, "cep not provided", http.StatusUnprocessableEntity)
+	// }
+
+	b := []byte(cep)
+	rn := regexp.MustCompile(`^\d{8}$`)
+	if rn.Match(b) {
+		cep = cep[0:5] + "-" + cep[5:8]
+		b = []byte(cep)
+	} 
+	
+	rt := regexp.MustCompile(`^\d{5}[-]\d{3}$`)
+	if !rt.Match(b) {
 		w.Header().Set("Content-Type", "application/json")
-		http.Error(w, "cep not provided", http.StatusUnprocessableEntity)
+		http.Error(w, "cep invalid", http.StatusBadRequest)
+		return
 	}
+	log.Printf("searching for %s\n", cep)
 
 	api := make(chan string)
 	via := make(chan string)
